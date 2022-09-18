@@ -1,0 +1,10 @@
+This is release 2022-08-11T18:53:22Z of the dataset billboards-signs-and-branding created 
+on MekaBytes.com. A full list of contributors can be found below.
+This particular download exists thanks to user TACIXAT. 
+It was generated on 2022-08-11 at 18:53:52.
+
+=== CONTRIBUTORS ===
+douglas
+coffee
+Nixums
+TACIXAT
