@@ -78,6 +78,9 @@ target/
 # exclude images from source control by default
 *.jpg
 
+#exclude raw data from source control by default
+data/raw/*
+
 # Mac OS-specific storage files
 .DS_Store
 
