@@ -6,6 +6,10 @@ name = "pypi"
 [packages]
 click = "*"
 pandas = "*"
+tensorflow = "*"
+keras = "*"
+pillow = "*"
+mask-rcnn = {git = "https://github.com/matterport/Mask_RCNN.git"}
 
 [dev-packages]
 
