@@ -1,48 +1,71 @@
-# -*- coding: utf-8 -*-
 import os
-import click
+import random
 import logging
+from typing import Tuple
+
+import numpy as np
 import pandas as pd
-from pathlib import Path
+from PIL import Image
+from mrcnn.utils import Dataset
+
+LABES_MAP = {'advertisement': 1, 'signage': 2, 'branding': 3}
 
 
-def read_multiple_csvs(path: Path) -> pd.DataFrame:
-    """Read multiple csv files into a single dataframe
+class AdvertisementDataset(Dataset):
 
-    Args:
-        path (Path): Path to the directory containing the csv files
+    def image_path(self, dataset_dir: str, image_id: str) -> str:
+        return dataset_dir + '/images/' + image_id + '.jpg'
 
-    Returns:
-        pandas.DataFrame: Dataframe containing all the csv files
-    """
-    dfs = []
-    for file in os.listdir(path):
-        if file.endswith(".csv"):
-            new_df = pd.read_csv(path / file)
-            new_df['filename'] = file[0:-4]
-            dfs.append(new_df)
-    return pd.concat(dfs)
+    def annotation_path(self, dataset_dir: str, image_id: str) -> str:
+        return dataset_dir + '/annotations/' + image_id + '.csv'
 
+    def load_dataset(self, dataset_dir, is_train=True, train_size=0.8):
+        images_dir = dataset_dir + '/images/'
+        annotations_dir = dataset_dir + '/annotations/'
+        image_files = os.listdir(images_dir)
+        # shuffle images to guarantte random order when splitting into train and test
+        random.shuffle(image_files)
+        images_count = len(image_files)
+        train_count = int(images_count * train_size)
+        logging.info(f"Total images: {images_count}")
+        for label in LABES_MAP:
+            self.add_class("dataset", LABES_MAP[label], label)
+        for i, filename in enumerate(random.sos.listdir(images_dir)):
+            image_id = filename[:-4]
+            if is_train and i >= train_count:
+                continue
+            if not is_train and i < train_count:
+                continue
+            img_path = images_dir + filename
+            ann_path = annotations_dir + image_id + '.csv'
+            self.add_image('dataset',
+                           image_id=image_id,
+                           path=img_path,
+                           annotation=ann_path)
 
-@click.command()
-@click.argument('input_folder', type=click.Path(exists=True))
-@click.argument('output_folder', type=click.Path())
-def main(input_folder, output_folder):
-    """ Runs data processing scripts to turn raw data from (../raw) into
-        cleaned data ready to be analyzed (saved in ../processed).
-    """
-    logger = logging.getLogger(__name__)
-    logger.info('making final data set from raw data')
+    def extract_boxes(self, dataset_dir: str,
+                      image_id: str) -> Tuple[pd.DataFrame, int, int]:
+        image_path = self.image_path(dataset_dir, image_id)
+        annotation_path = self.annotation_path(dataset_dir, image_id)
+        boxes = pd.read_csv(annotation_path)
+        img = Image.open(image_path)
+        width, height = img.size
+        return boxes, width, height
 
-    annotations_dfs = read_multiple_csvs(Path(input_folder))
-    annotations_dfs.to_csv(f'{output_folder}/annotations.csv', index=False)
+    def load_mask(self, image_id):
+        info = self.image_info[image_id]
+        path = info['annotation']
+        boxes, w, h = self.extract_boxes(path)
+        annotations_count = boxes.shape[0]
+        masks = np.zeros([h, w, annotations_count], dtype='uint8')
+        class_ids = list()
+        for i, box in enumerate(boxes.values):
+            row_s, row_e = box[1], box[3]
+            col_s, col_e = box[0], box[2]
+            masks[row_s:row_e, col_s:col_e, i] = LABES_MAP[box[4]]
+            class_ids.append(self.class_names.index(box[4]))
+        return masks, np.asarray(class_ids, dtype='int32')
 
-
-if __name__ == '__main__':
-    log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    logging.basicConfig(level=logging.INFO, format=log_fmt)
-
-    # not used in this stub but often useful for finding various files
-    project_dir = Path(__file__).resolve().parents[2]
-
-    main()
+    def image_reference(self, image_id):
+        info = self.image_info[image_id]
+        return info['path']
