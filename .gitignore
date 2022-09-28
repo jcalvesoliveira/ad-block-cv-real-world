@@ -90,3 +90,5 @@ data/raw/*
 
 # Mypy cache
 .mypy_cache/
+
+models/*
