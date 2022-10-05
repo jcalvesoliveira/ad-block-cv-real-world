@@ -9,6 +9,11 @@ pandas = "*"
 tensorflow = "*"
 keras = "*"
 pillow = "*"
+scipy = "*"
+scikit-image = "*"
+opencv-python = "*"
+h5py = "*"
+imgaug = "*"
 mask-rcnn = {git = "https://github.com/matterport/Mask_RCNN.git"}
 
 [dev-packages]

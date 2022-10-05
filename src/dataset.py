@@ -26,16 +26,16 @@ class AdvertisementDataset(Dataset):
         # shuffle images to guarantte random order when splitting into train and test
         random.shuffle(image_files)
         images_count = len(image_files)
-        train_count = int(images_count * train_size)
+        train_threshold = int(images_count * train_size)
         logging.info(f"Total images: {images_count}")
         for label in LABES_MAP:
             self.add_class("dataset", LABES_MAP[label], label)
-        for i, filename in enumerate(random.sos.listdir(images_dir)):
+        for i, filename in enumerate(os.listdir(images_dir)):
+            if is_train and i >= train_threshold:
+                continue
+            if not is_train and i < train_threshold:
+                continue
             image_id = filename[:-4]
-            if is_train and i >= train_count:
-                continue
-            if not is_train and i < train_count:
-                continue
             img_path = images_dir + filename
             ann_path = annotations_dir + image_id + '.csv'
             self.add_image('dataset',
@@ -69,3 +69,14 @@ class AdvertisementDataset(Dataset):
     def image_reference(self, image_id):
         info = self.image_info[image_id]
         return info['path']
+
+
+if __name__ == '__main__':
+    train_dataset = AdvertisementDataset()
+    train_dataset.load_dataset('data/raw', is_train=True)
+    train_dataset.prepare()
+    print('Train: %d' % len(train_dataset.image_ids))
+    test_dataset = AdvertisementDataset()
+    test_dataset.load_dataset('data/raw', is_train=False)
+    test_dataset.prepare()
+    print('Test: %d' % len(test_dataset.image_ids))
