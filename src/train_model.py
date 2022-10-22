@@ -5,7 +5,7 @@ from mrcnn.model import MaskRCNN
 from .dataset import AdvertisementDataset
 
 
-class KangarooConfig(Config):
+class AdsConfig(Config):
     NAME = "ads_cfg"
     NUM_CLASSES = 3
     STEPS_PER_EPOCH = 131
@@ -22,7 +22,7 @@ def main():
     test_set.prepare()
     print('Test: %d' % len(test_set.image_ids))
     # prepare config
-    config = KangarooConfig()
+    config = AdsConfig()
     config.display()
     # define the model
     model = MaskRCNN(mode='training', model_dir='models/', config=config)
@@ -39,6 +39,7 @@ def main():
                 learning_rate=config.LEARNING_RATE,
                 epochs=5,
                 layers='heads')
+
 
 
 if __name__ == '__main__':
