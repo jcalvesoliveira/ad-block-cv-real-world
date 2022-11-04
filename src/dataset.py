@@ -14,10 +14,10 @@ LABES_MAP = {'advertisement': 1, 'signage': 2, 'branding': 3}
 class AdvertisementDataset(Dataset):
 
     def image_path(self, dataset_dir: str, image_id: str) -> str:
-        return dataset_dir + '/images/' + image_id + '.jpg'
+        return dataset_dir + '/images/' + str(image_id) + '.jpg'
 
     def annotation_path(self, dataset_dir: str, image_id: str) -> str:
-        return dataset_dir + '/annotations/' + image_id + '.csv'
+        return dataset_dir + '/annotations/' + str(image_id) + '.csv'
 
     def load_dataset(self, dataset_dir, is_train=True, train_size=0.8):
         images_dir = dataset_dir + '/images/'
@@ -37,7 +37,7 @@ class AdvertisementDataset(Dataset):
                 continue
             image_id = filename[:-4]
             img_path = images_dir + filename
-            ann_path = annotations_dir + image_id + '.csv'
+            ann_path = annotations_dir + str(image_id) + '.csv'
             self.add_image('dataset',
                            image_id=image_id,
                            path=img_path,
@@ -55,7 +55,7 @@ class AdvertisementDataset(Dataset):
     def load_mask(self, image_id):
         info = self.image_info[image_id]
         path = info['annotation']
-        boxes, w, h = self.extract_boxes(path)
+        boxes, w, h = self.extract_boxes(path, image_id)
         annotations_count = boxes.shape[0]
         masks = np.zeros([h, w, annotations_count], dtype='uint8')
         class_ids = list()
