@@ -43,10 +43,8 @@ class AdvertisementDataset(Dataset):
                            path=img_path,
                            annotation=ann_path)
 
-    def extract_boxes(self, dataset_dir: str,
-                      image_id: str) -> Tuple[pd.DataFrame, int, int]:
-        image_path = self.image_path(dataset_dir, image_id)
-        annotation_path = self.annotation_path(dataset_dir, image_id)
+    def extract_boxes(self, annotation_path: str,
+                      image_path: str) -> Tuple[pd.DataFrame, int, int]:
         boxes = pd.read_csv(annotation_path)
         img = Image.open(image_path)
         width, height = img.size
@@ -54,8 +52,9 @@ class AdvertisementDataset(Dataset):
 
     def load_mask(self, image_id):
         info = self.image_info[image_id]
-        path = info['annotation']
-        boxes, w, h = self.extract_boxes(path, image_id)
+        annotation_path = info['annotation']
+        image_path = info['path']
+        boxes, w, h = self.extract_boxes(annotation_path, image_path)
         annotations_count = boxes.shape[0]
         masks = np.zeros([h, w, annotations_count], dtype='uint8')
         class_ids = list()
