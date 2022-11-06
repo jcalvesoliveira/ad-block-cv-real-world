@@ -19,6 +19,13 @@ class AdsConfig(Config):
     IMAGE_MAX_DIM = 512
 
 
+class PredictionConfig(Config):
+    NAME = "ads_cfg"
+    NUM_CLASSES = 4
+    GPU_COUNT = 1
+    IMAGES_PER_GPU = 1
+
+
 # calculate the mAP for a model on a given dataset
 def evaluate_model(dataset, model, cfg):
     APs = list()
@@ -69,15 +76,18 @@ def model_mrcnn():
                 learning_rate=config.LEARNING_RATE,
                 epochs=5,
                 layers='all')
+    # save model
+    model.keras_model.save_weights('models/mask_rcnn_ads_cfg.h5')
+    cfg = PredictionConfig()
+    # define the model
+    model = MaskRCNN(mode='inference', model_dir='models/', config=cfg)
+    model.load_weights('mask_rcnn_coco_ads_cfg.h5', by_name=True)
     # evaluate model on training dataset
     train_mAP = evaluate_model(train_set, model, config)
     print("Train mAP: %.3f" % train_mAP)
     # evaluate model on test dataset
     test_mAP = evaluate_model(test_set, model, config)
     print("Test mAP: %.3f" % test_mAP)
-
-    # save model
-    model.keras_model.save_weights('models/mask_rcnn_ads_cfg.h5')
 
 
 @app.command()
@@ -99,15 +109,19 @@ def model_transfer_learning():
                 learning_rate=config.LEARNING_RATE,
                 epochs=5,
                 layers='heads')
+    # save model
+    model.keras_model.save_weights('models/mask_rcnn_coco_ads_cfg.h5')
+
+    cfg = PredictionConfig()
+    # define the model
+    model = MaskRCNN(mode='inference', model_dir='models/', config=cfg)
+    model.load_weights('mask_rcnn_coco_ads_cfg.h5', by_name=True)
     # evaluate model on training dataset
     train_mAP = evaluate_model(train_set, model, config)
     print("Train mAP: %.3f" % train_mAP)
     # evaluate model on test dataset
     test_mAP = evaluate_model(test_set, model, config)
     print("Test mAP: %.3f" % test_mAP)
-
-    # save model
-    model.keras_model.save_weights('models/mask_rcnn_coco_ads_cfg.h5')
 
 
 if __name__ == '__main__':
