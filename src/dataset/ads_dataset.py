@@ -16,10 +16,11 @@ class AdvertisementDataset(Dataset):
     @staticmethod
     def convert_bound_boxes_from_perc_to_loc(annotations: np.ndarray, w: int,
                                              h: int) -> np.ndarray:
-        annotations[:, 0] = int(annotations[:, 0] * w)
-        annotations[:, 1] = int(annotations[:, 1] * h)
-        annotations[:, 2] = int(annotations[:, 2] * w)
-        annotations[:, 3] = int(annotations[:, 3] * h)
+        annotations[:, 0] = annotations[:, 0] * w
+        annotations[:, 1] = annotations[:, 1] * h
+        annotations[:, 2] = annotations[:, 2] * w
+        annotations[:, 3] = annotations[:, 3] * h
+        annotations[:, 0:4] = annotations[:, 0:4].astype(int)
         return annotations
 
     def image_path(self, dataset_dir: str, image_id: str) -> str:
