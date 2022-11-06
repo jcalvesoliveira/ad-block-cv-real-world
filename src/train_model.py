@@ -6,6 +6,8 @@ from mrcnn.model import MaskRCNN, load_image_gt, mold_image
 
 from dataset import AdvertisementDataset
 
+app = typer.Typer()
+
 
 class AdsConfig(Config):
     NAME = "ads_cfg"
@@ -34,7 +36,7 @@ def evaluate_model(dataset, model, cfg):
     return mAP
 
 
-def main():
+def get_datasets():
     # train set
     train_set = AdvertisementDataset()
     train_set.load_dataset('data/raw', is_train=True)
@@ -45,9 +47,43 @@ def main():
     test_set.load_dataset('data/raw', is_train=False)
     test_set.prepare()
     print('Test: %d' % len(test_set.image_ids))
+    return train_set, test_set
+
+
+def prepare_config():
     # prepare config
     config = AdsConfig()
     config.display()
+    return config
+
+
+@app.command()
+def model_mrcnn():
+    train_set, test_set = get_datasets()
+    config = prepare_config()
+    # define the model
+    model = MaskRCNN(mode='training', model_dir='models/', config=config)
+    # train weights (output layers or 'heads')
+    model.train(train_set,
+                test_set,
+                learning_rate=config.LEARNING_RATE,
+                epochs=5,
+                layers='all')
+    # evaluate model on training dataset
+    train_mAP = evaluate_model(train_set, model, config)
+    print("Train mAP: %.3f" % train_mAP)
+    # evaluate model on test dataset
+    test_mAP = evaluate_model(test_set, model, config)
+    print("Test mAP: %.3f" % test_mAP)
+
+    # save model
+    model.keras_model.save_weights('models/mask_rcnn_ads_cfg.h5')
+
+
+@app.command()
+def model_transfer_learning():
+    train_set, test_set = get_datasets()
+    config = prepare_config()
     # define the model
     model = MaskRCNN(mode='training', model_dir='models/', config=config)
     # load weights (mscoco) and exclude the output layers
@@ -71,8 +107,8 @@ def main():
     print("Test mAP: %.3f" % test_mAP)
 
     # save model
-    model.keras_model.save_weights('models/mask_rcnn_ads_cfg.h5')
+    model.keras_model.save_weights('models/mask_rcnn_coco_ads_cfg.h5')
 
 
 if __name__ == '__main__':
-    typer.run(main)
+    app()
