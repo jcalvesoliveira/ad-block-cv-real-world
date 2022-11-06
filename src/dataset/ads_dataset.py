@@ -8,10 +8,19 @@ import pandas as pd
 from PIL import Image
 from mrcnn.utils import Dataset
 
-LABES_MAP = {'advertisement': 1, 'signage': 2, 'branding': 3}
+LABES_MAP = {'billboard': 1, 'signage': 2, 'branding': 3}
 
 
 class AdvertisementDataset(Dataset):
+
+    @staticmethod
+    def convert_bound_boxes_from_perc_to_loc(annotations: np.ndarray, w: int,
+                                             h: int) -> np.ndarray:
+        annotations[:, 0] = int(annotations[:, 0] * w)
+        annotations[:, 1] = int(annotations[:, 1] * h)
+        annotations[:, 2] = int(annotations[:, 2] * w)
+        annotations[:, 3] = int(annotations[:, 3] * h)
+        return annotations
 
     def image_path(self, dataset_dir: str, image_id: str) -> str:
         return dataset_dir + '/images/' + str(image_id) + '.jpg'
@@ -45,9 +54,10 @@ class AdvertisementDataset(Dataset):
 
     def extract_boxes(self, annotation_path: str,
                       image_path: str) -> Tuple[pd.DataFrame, int, int]:
-        boxes = pd.read_csv(annotation_path)
+        boxes = pd.read_csv(annotation_path).values
         img = Image.open(image_path)
         width, height = img.size
+        boxes = self.convert_bound_boxes_from_perc_to_loc(boxes, width, height)
         return boxes, width, height
 
     def load_mask(self, image_id):
@@ -58,7 +68,7 @@ class AdvertisementDataset(Dataset):
         annotations_count = boxes.shape[0]
         masks = np.zeros([h, w, annotations_count], dtype='uint8')
         class_ids = list()
-        for i, box in enumerate(boxes.values):
+        for i, box in enumerate(boxes):
             row_s, row_e = box[1], box[3]
             col_s, col_e = box[0], box[2]
             masks[row_s:row_e, col_s:col_e, i] = LABES_MAP[box[4]]
