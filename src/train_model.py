@@ -78,6 +78,7 @@ def model_mrcnn():
                 layers='all')
     # save model
     model.keras_model.save_weights('models/mask_rcnn_ads_cfg.h5')
+
     cfg = PredictionConfig()
     # define the model
     model = MaskRCNN(mode='inference', model_dir='models/', config=cfg)
@@ -115,7 +116,7 @@ def model_transfer_learning():
     cfg = PredictionConfig()
     # define the model
     model = MaskRCNN(mode='inference', model_dir='models/', config=cfg)
-    model.load_weights('mask_rcnn_coco_ads_cfg.h5', by_name=True)
+    model.load_weights('modelsmask_rcnn_coco_ads_cfg.h5', by_name=True)
     # evaluate model on training dataset
     train_mAP = evaluate_model(train_set, model, config)
     print("Train mAP: %.3f" % train_mAP)
