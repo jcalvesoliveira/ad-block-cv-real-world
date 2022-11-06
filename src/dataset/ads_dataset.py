@@ -29,7 +29,7 @@ class AdvertisementDataset(Dataset):
     def annotation_path(self, dataset_dir: str, image_id: str) -> str:
         return dataset_dir + '/annotations/' + str(image_id) + '.csv'
 
-    def load_dataset(self, dataset_dir, is_train=True, train_size=0.01):
+    def load_dataset(self, dataset_dir, is_train=True, train_size=0.80):
         images_dir = dataset_dir + '/images/'
         annotations_dir = dataset_dir + '/annotations/'
         image_files = os.listdir(images_dir)
