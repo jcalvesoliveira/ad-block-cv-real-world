@@ -4,19 +4,9 @@ from mrcnn.utils import compute_ap
 from numpy import expand_dims, mean
 from mrcnn.model import MaskRCNN, load_image_gt, mold_image
 
-from dataset import AdvertisementDataset
+from dataset.ads_dataset import AdvertisementDataset, AdsConfig
 
 app = typer.Typer()
-
-
-class AdsConfig(Config):
-    NAME = "ads_cfg"
-    NUM_CLASSES = 4
-    STEPS_PER_EPOCH = 131
-    GPU_COUNT = 1
-    IMAGES_PER_GPU = 1
-    IMAGE_MIN_DIM = 400
-    IMAGE_MAX_DIM = 512
 
 
 class PredictionConfig(Config):
@@ -24,6 +14,7 @@ class PredictionConfig(Config):
     NUM_CLASSES = 4
     GPU_COUNT = 1
     IMAGES_PER_GPU = 1
+    USE_MINI_MASK = False
 
 
 # calculate the mAP for a model on a given dataset
@@ -108,10 +99,10 @@ def model_transfer_learning():
     model.train(train_set,
                 test_set,
                 learning_rate=config.LEARNING_RATE,
-                epochs=5,
+                epochs=2,
                 layers='heads')
     # save model
-    model.keras_model.save_weights('models/mask_rcnn_coco_ads_cfg.h5')
+    model.keras_model.save_weights('models/mask_rcnn_coco_ads_cfg2.h5')
 
     cfg = PredictionConfig()
     # define the model

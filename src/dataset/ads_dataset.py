@@ -7,8 +7,20 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 from mrcnn.utils import Dataset
+from mrcnn.config import Config
 
 LABES_MAP = {'billboard': 1, 'signage': 2, 'branding': 3}
+
+
+class AdsConfig(Config):
+    NAME = "ads_cfg"
+    NUM_CLASSES = 4
+    STEPS_PER_EPOCH = 131
+    GPU_COUNT = 1
+    IMAGES_PER_GPU = 1
+    IMAGE_MIN_DIM = 400
+    IMAGE_MAX_DIM = 512
+    USE_MINI_MASK = False
 
 
 class AdvertisementDataset(Dataset):
