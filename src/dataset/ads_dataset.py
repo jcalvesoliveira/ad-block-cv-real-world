@@ -9,8 +9,6 @@ from PIL import Image
 from mrcnn.utils import Dataset
 from mrcnn.config import Config
 
-LABES_MAP = {'billboard': 1, 'signage': 2, 'branding': 3}
-
 
 class AdsConfig(Config):
     NAME = "ads_cfg"
@@ -22,10 +20,15 @@ class AdsConfig(Config):
     IMAGE_MAX_DIM = 512
 
 
-class AdvertisementDataset(Dataset):
+class SignageConfig(AdsConfig):
+    NAME = "sgn_cfg"
+    NUM_CLASSES = 2
 
-    @staticmethod
-    def convert_annotations(annotations: pd.DataFrame) -> pd.DataFrame:
+
+class AdvertisementDataset(Dataset):
+    LABES_MAP = {'billboard': 1, 'signage': 2, 'branding': 3}
+
+    def convert_annotations(self, annotations: pd.DataFrame) -> pd.DataFrame:
         data = []
         for index, row in annotations.iterrows():
             row_data = {}
@@ -37,11 +40,10 @@ class AdvertisementDataset(Dataset):
             data.append(row_data)
         return pd.DataFrame(data)
 
-    @staticmethod
-    def has_annotation(annotation_path: str):
+    def has_annotation(self, annotation_path: str):
         boxes = pd.read_json(annotation_path, lines=True)
-        boxes = AdvertisementDataset.convert_annotations(boxes).values
-        return boxes.shape[0] > 0
+        boxes = self.convert_annotations(boxes)
+        return boxes.empty is False
 
     @staticmethod
     def convert_bound_boxes_from_perc_to_loc(annotations: np.ndarray, w: int,
@@ -66,8 +68,8 @@ class AdvertisementDataset(Dataset):
         images_count = len(image_files)
         train_threshold = int(images_count * train_size)
         logging.info(f"Total images: {images_count}")
-        for label in LABES_MAP:
-            self.add_class("dataset", LABES_MAP[label], label)
+        for label in self.LABES_MAP:
+            self.add_class("dataset", self.LABES_MAP[label], label)
         for i, filename in enumerate(os.listdir(images_dir)):
             if is_train and i >= train_threshold:
                 continue
@@ -103,10 +105,28 @@ class AdvertisementDataset(Dataset):
         for i, box in enumerate(boxes):
             row_s, row_e = box[1], box[3]
             col_s, col_e = box[0], box[2]
-            masks[row_s:row_e, col_s:col_e, i] = LABES_MAP[box[4]]
+            masks[row_s:row_e, col_s:col_e, i] = self.LABES_MAP[box[4]]
             class_ids.append(self.class_names.index(box[4]))
         return masks, np.asarray(class_ids, dtype='int32')
 
     def image_reference(self, image_id):
         info = self.image_info[image_id]
         return info['path']
+
+
+class SignageDataset(AdvertisementDataset):
+    LABES_MAP = {'signage': 1}
+
+    def convert_annotations(self, annotations: pd.DataFrame) -> pd.DataFrame:
+        data = []
+        for index, row in annotations.iterrows():
+            if row['labels'][0] != 'signage':
+                continue
+            row_data = {}
+            row_data['x1'] = row['coordinates'][0]['x']
+            row_data['y1'] = row['coordinates'][0]['y']
+            row_data['x2'] = row['coordinates'][1]['x']
+            row_data['y2'] = row['coordinates'][1]['y']
+            row_data['label'] = row['labels'][0]
+            data.append(row_data)
+        return pd.DataFrame(data)
