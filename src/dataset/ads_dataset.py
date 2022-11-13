@@ -20,10 +20,28 @@ class AdsConfig(Config):
     IMAGES_PER_GPU = 1
     IMAGE_MIN_DIM = 400
     IMAGE_MAX_DIM = 512
-    USE_MINI_MASK = False
 
 
 class AdvertisementDataset(Dataset):
+
+    @staticmethod
+    def convert_annotations(annotations: pd.DataFrame) -> pd.DataFrame:
+        data = []
+        for index, row in annotations.iterrows():
+            row_data = {}
+            row_data['x1'] = row['coordinates'][0]['x']
+            row_data['y1'] = row['coordinates'][0]['y']
+            row_data['x2'] = row['coordinates'][1]['x']
+            row_data['y2'] = row['coordinates'][1]['y']
+            row_data['label'] = row['labels'][0]
+            data.append(row_data)
+        return pd.DataFrame(data)
+
+    @staticmethod
+    def has_annotation(annotation_path: str):
+        boxes = pd.read_json(annotation_path, lines=True)
+        boxes = AdvertisementDataset.convert_annotations(boxes).values
+        return boxes.shape[0] > 0
 
     @staticmethod
     def convert_bound_boxes_from_perc_to_loc(annotations: np.ndarray, w: int,
@@ -39,14 +57,12 @@ class AdvertisementDataset(Dataset):
         return dataset_dir + '/images/' + str(image_id) + '.jpg'
 
     def annotation_path(self, dataset_dir: str, image_id: str) -> str:
-        return dataset_dir + '/annotations/' + str(image_id) + '.csv'
+        return dataset_dir + '/annotations/' + str(image_id) + '.json'
 
     def load_dataset(self, dataset_dir, is_train=True, train_size=0.80):
         images_dir = dataset_dir + '/images/'
         annotations_dir = dataset_dir + '/annotations/'
         image_files = os.listdir(images_dir)
-        # shuffle images to guarantte random order when splitting into train and test
-        random.shuffle(image_files)
         images_count = len(image_files)
         train_threshold = int(images_count * train_size)
         logging.info(f"Total images: {images_count}")
@@ -59,7 +75,9 @@ class AdvertisementDataset(Dataset):
                 continue
             image_id = filename[:-4]
             img_path = images_dir + filename
-            ann_path = annotations_dir + str(image_id) + '.csv'
+            ann_path = self.annotation_path(dataset_dir, image_id)
+            if not self.has_annotation(ann_path):
+                continue
             self.add_image('dataset',
                            image_id=image_id,
                            path=img_path,
@@ -67,7 +85,8 @@ class AdvertisementDataset(Dataset):
 
     def extract_boxes(self, annotation_path: str,
                       image_path: str) -> Tuple[pd.DataFrame, int, int]:
-        boxes = pd.read_csv(annotation_path).values
+        boxes = pd.read_json(annotation_path, lines=True)
+        boxes = self.convert_annotations(boxes).values
         img = Image.open(image_path)
         width, height = img.size
         boxes = self.convert_bound_boxes_from_perc_to_loc(boxes, width, height)
@@ -91,14 +110,3 @@ class AdvertisementDataset(Dataset):
     def image_reference(self, image_id):
         info = self.image_info[image_id]
         return info['path']
-
-
-if __name__ == '__main__':
-    train_dataset = AdvertisementDataset()
-    train_dataset.load_dataset('data/raw', is_train=True)
-    train_dataset.prepare()
-    print('Train: %d' % len(train_dataset.image_ids))
-    test_dataset = AdvertisementDataset()
-    test_dataset.load_dataset('data/raw', is_train=False)
-    test_dataset.prepare()
-    print('Test: %d' % len(test_dataset.image_ids))

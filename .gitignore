@@ -92,3 +92,4 @@ data/raw/*
 .mypy_cache/
 
 models/*
+data/*

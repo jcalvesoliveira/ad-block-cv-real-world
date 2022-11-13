@@ -9,14 +9,6 @@ from dataset.ads_dataset import AdvertisementDataset, AdsConfig
 app = typer.Typer()
 
 
-class PredictionConfig(Config):
-    NAME = "ads_cfg"
-    NUM_CLASSES = 4
-    GPU_COUNT = 1
-    IMAGES_PER_GPU = 1
-    USE_MINI_MASK = False
-
-
 # calculate the mAP for a model on a given dataset
 def evaluate_model(dataset, model, cfg):
     APs = list()
@@ -37,12 +29,12 @@ def evaluate_model(dataset, model, cfg):
 def get_datasets():
     # train set
     train_set = AdvertisementDataset()
-    train_set.load_dataset('data/raw', is_train=True)
+    train_set.load_dataset('data', is_train=True)
     train_set.prepare()
     print('Train: %d' % len(train_set.image_ids))
     # test/val set
     test_set = AdvertisementDataset()
-    test_set.load_dataset('data/raw', is_train=False)
+    test_set.load_dataset('data', is_train=False)
     test_set.prepare()
     print('Test: %d' % len(test_set.image_ids))
     return train_set, test_set
@@ -56,7 +48,8 @@ def prepare_config():
 
 
 @app.command()
-def model_mrcnn():
+def model_mrcnn(epochs: int = 5):
+    MODEL_NAME = f'mask_rcnn_ads_cfg_{epochs}.h5'
     train_set, test_set = get_datasets()
     config = prepare_config()
     # define the model
@@ -65,25 +58,15 @@ def model_mrcnn():
     model.train(train_set,
                 test_set,
                 learning_rate=config.LEARNING_RATE,
-                epochs=5,
+                epochs=epochs,
                 layers='all')
     # save model
-    model.keras_model.save_weights('models/mask_rcnn_ads_cfg.h5')
-
-    cfg = PredictionConfig()
-    # define the model
-    model = MaskRCNN(mode='inference', model_dir='models/', config=cfg)
-    model.load_weights('models/mask_rcnn_ads_cfg.h5', by_name=True)
-    # evaluate model on training dataset
-    train_mAP = evaluate_model(train_set, model, config)
-    print("Train mAP: %.3f" % train_mAP)
-    # evaluate model on test dataset
-    test_mAP = evaluate_model(test_set, model, config)
-    print("Test mAP: %.3f" % test_mAP)
+    model.keras_model.save_weights(f"models/{MODEL_NAME}")
 
 
 @app.command()
-def model_transfer_learning():
+def model_transfer_learning(epochs: int = 5):
+    MODEL_NAME = f'mask_rcnn_coco_ads_transfer_learning_{epochs}.h5'
     train_set, test_set = get_datasets()
     config = prepare_config()
     # define the model
@@ -99,21 +82,10 @@ def model_transfer_learning():
     model.train(train_set,
                 test_set,
                 learning_rate=config.LEARNING_RATE,
-                epochs=2,
+                epochs=epochs,
                 layers='heads')
     # save model
-    model.keras_model.save_weights('models/mask_rcnn_coco_ads_cfg2.h5')
-
-    cfg = PredictionConfig()
-    # define the model
-    model = MaskRCNN(mode='inference', model_dir='models/', config=cfg)
-    model.load_weights('models/mask_rcnn_coco_ads_cfg.h5', by_name=True)
-    # evaluate model on training dataset
-    train_mAP = evaluate_model(train_set, model, config)
-    print("Train mAP: %.3f" % train_mAP)
-    # evaluate model on test dataset
-    test_mAP = evaluate_model(test_set, model, config)
-    print("Test mAP: %.3f" % test_mAP)
+    model.keras_model.save_weights(f"models/{MODEL_NAME}")
 
 
 if __name__ == '__main__':
