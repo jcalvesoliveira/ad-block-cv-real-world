@@ -3,10 +3,34 @@ from mrcnn.config import Config
 from mrcnn.utils import compute_ap
 from numpy import expand_dims, mean
 from mrcnn.model import MaskRCNN, load_image_gt, mold_image
+from keras.callbacks import (ModelCheckpoint, ReduceLROnPlateau, CSVLogger)
 
 from dataset.ads_dataset import AdvertisementDataset, AdsConfig, SignageConfig, SignageDataset
 
 app = typer.Typer()
+
+
+def callback():
+    cb = []
+    checkpoint = ModelCheckpoint('models/checkpoints/ad_block.h5',
+                                 save_best_only=True,
+                                 mode='min',
+                                 monitor='val_loss',
+                                 save_weights_only=True,
+                                 verbose=1)
+    cb.append(checkpoint)
+    reduceLROnPlat = ReduceLROnPlateau(monitor='val_loss',
+                                       factor=0.3,
+                                       patience=5,
+                                       verbose=1,
+                                       mode='auto',
+                                       epsilon=0.0001,
+                                       cooldown=1,
+                                       min_lr=0.00001)
+    log = CSVLogger('models/history/ad_block.csv')
+    cb.append(log)
+    cb.append(reduceLROnPlat)
+    return cb
 
 
 # calculate the mAP for a model on a given dataset
@@ -85,11 +109,13 @@ def model_transfer_learning(epochs: int = 5,
                            "mrcnn_mask"
                        ])
     # train weights (output layers or 'heads')
+    CB = callback()
     model.train(train_set,
                 test_set,
                 learning_rate=config.LEARNING_RATE,
                 epochs=epochs,
-                layers='heads')
+                layers='heads',
+                custom_callbacks=CB)
     # save model
     model.keras_model.save_weights(f"models/{MODEL_NAME}")
 

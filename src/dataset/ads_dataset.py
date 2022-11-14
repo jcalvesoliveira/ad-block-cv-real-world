@@ -115,18 +115,16 @@ class AdvertisementDataset(Dataset):
 
 
 class SignageDataset(AdvertisementDataset):
-    LABES_MAP = {'signage': 1}
+    LABES_MAP = {'ad': 1}
 
     def convert_annotations(self, annotations: pd.DataFrame) -> pd.DataFrame:
         data = []
         for index, row in annotations.iterrows():
-            if row['labels'][0] != 'signage':
-                continue
             row_data = {}
             row_data['x1'] = row['coordinates'][0]['x']
             row_data['y1'] = row['coordinates'][0]['y']
             row_data['x2'] = row['coordinates'][1]['x']
             row_data['y2'] = row['coordinates'][1]['y']
-            row_data['label'] = row['labels'][0]
+            row_data['label'] = 'ad'
             data.append(row_data)
         return pd.DataFrame(data)

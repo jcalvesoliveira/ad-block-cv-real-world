@@ -31,4 +31,8 @@ https://www.kaggle.com/datasets/mekabytes/billboards-signs-and-branding
 
 ---
 
+References:
+
+https://www.kaggle.com/ipythonx/keras-global-wheat-detection-with-mask-rcnn/notebook
+
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
