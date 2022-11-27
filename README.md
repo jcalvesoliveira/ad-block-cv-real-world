@@ -5,6 +5,11 @@ This project aims to create an object detection model capable of automatically d
 Dataset available in:
 https://mekabytes.com/dataset/info/billboards-signs-and-branding
 
+Authors:
+
+- Julio Oliveira
+- Jordan Farrel
+
 ## Project Organization
 
     ├── LICENSE
