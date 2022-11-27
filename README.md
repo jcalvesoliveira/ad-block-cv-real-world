@@ -1,14 +1,17 @@
 # ad-block-real-world
 
+This project aims to create an object detection model capable of automatically detecting advertsiment on images.
+
 Dataset available in:
-https://www.kaggle.com/datasets/mekabytes/billboards-signs-and-branding
+https://mekabytes.com/dataset/info/billboards-signs-and-branding
 
 ## Project Organization
 
     ├── LICENSE
     ├── README.md          <- The top-level README for developers using this project.
     ├── data
-    │   └── raw            <- The original, immutable data dump.
+    │   ├── annotations    <- Annotations.
+    │   └── images         <- The original images.
     │
     ├── models             <- Trained and serialized models, model predictions, or model summaries
     │
@@ -34,5 +37,3 @@ https://www.kaggle.com/datasets/mekabytes/billboards-signs-and-branding
 References:
 
 https://www.kaggle.com/ipythonx/keras-global-wheat-detection-with-mask-rcnn/notebook
-
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>

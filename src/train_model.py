@@ -1,4 +1,5 @@
 import typer
+import imgaug
 from mrcnn.config import Config
 from mrcnn.utils import compute_ap
 from numpy import expand_dims, mean
@@ -116,6 +117,36 @@ def model_transfer_learning(epochs: int = 5,
                 epochs=epochs,
                 layers='heads',
                 custom_callbacks=CB)
+    # save model
+    model.keras_model.save_weights(f"models/{MODEL_NAME}")
+
+
+@app.command()
+def model_data_augmentation(epochs: int = 5,
+                            learning_rate: float = 0.001,
+                            only_signage: bool = False):
+    MODEL_NAME = f'mask_rcnn_coco_ads_transfer_learning_augmented_{str(only_signage)}_{epochs}_{str(learning_rate).replace(".","")}.h5'
+    train_set, test_set = get_datasets(only_signage)
+    config = prepare_config(only_signage)
+    # define the model
+    model = MaskRCNN(mode='training', model_dir='models/', config=config)
+    # load weights (mscoco) and exclude the output layers
+    model.load_weights('models/mask_rcnn_coco.h5',
+                       by_name=True,
+                       exclude=[
+                           "mrcnn_class_logits", "mrcnn_bbox_fc", "mrcnn_bbox",
+                           "mrcnn_mask"
+                       ])
+    # train weights (output layers or 'heads')
+    CB = callback()
+    augmentation = imgaug.augmenters.Fliplr(0.5)
+    model.train(train_set,
+                test_set,
+                learning_rate=config.LEARNING_RATE,
+                epochs=epochs,
+                layers='heads',
+                custom_callbacks=CB,
+                augmentation=augmentation)
     # save model
     model.keras_model.save_weights(f"models/{MODEL_NAME}")
 
